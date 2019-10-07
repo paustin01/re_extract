@@ -1,0 +1,5 @@
+chromedriver*
+sessions.txt
+venv
+.env
+.vscode
