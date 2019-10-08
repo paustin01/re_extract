@@ -51,7 +51,7 @@ pip install -r requirements.txt
 python re_extract.py
 ```
 
-When done, open the `sessions.txt` file in Excel or spreadsheet app of choise
+When done, open the `sessions.txt` file in Excel or spreadsheet app of choice
 
 # Notes on design choices
 - As the original credited developer noted, the reinvent session catalog site is

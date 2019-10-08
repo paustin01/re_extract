@@ -157,10 +157,13 @@ login(DRIVER, USERNAME, PASSWORD)
 # looking at the lists by session.
 for session_type_id, session_type_name in SESSION_TYPES.items():
     for topic_id, topic_name in TOPICS.items():
-        url = f"https://www.portal.reinvent.awsevents.com/connect/search.ww#" \
-               "loadSearch-searchPhrase=&searchType=session&tc=0&sortBy=" \
-               "abbreviationSort&sessionTypeID={session_type_id}&p=&i(19577)=" \
-               "{topic_id}"
+        url = "https://www.portal.reinvent.awsevents.com/connect/search.ww#" \
+               "loadSearch-searchPhrase=" \
+               "&searchType=session" \
+               "&tc=0" \
+               "&sortBy=" \
+               f"abbreviationSort&sessionTypeID={session_type_id}" \
+               f"&p=&i(19577)={topic_id}"
         DRIVER.get('chrome://settings/clearBrowserData')
         DRIVER.get(url)
         sleep(3)
