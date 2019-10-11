@@ -56,12 +56,13 @@ TOPICS = {
 load_dotenv(dotenv_path='.env')
 USERNAME = os.environ["REINVENT_USERNAME"]
 PASSWORD = os.environ["REINVENT_PASSWORD"]
-CHROME_DRIVER = os.environ["PATH_TO_CHROMEDRIVER"]
+CHROME_DRIVER = os.environ["CHROMEDRIVER_PATH"]
 REQ_VERIFY = bool(os.environ["VERIFY_SSL_CERTS"].lower() == 'true')
 
 # Initialize headless chrome
 CHROME_OPTIONS = Options()
 CHROME_OPTIONS.add_argument("--headless")
+CHROME_OPTIONS.add_argument(f"user-agent={os.environ['CHROMEDRIVER_USER_AGENT']}")
 CONTENT_TO_PARSE = ''
 
 DRIVER = webdriver.Chrome(chrome_options=CHROME_OPTIONS, executable_path=CHROME_DRIVER)

@@ -1,5 +1,7 @@
 chromedriver*
 sessions.txt
+sessions_with_interests.txt
+interests.txt
 venv
 .env
 .vscode
