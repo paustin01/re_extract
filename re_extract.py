@@ -90,6 +90,7 @@ def session_details(_session_id):
     '''
     details_url = 'https://www.portal.reinvent.awsevents.com/connect/dwr/call/' \
                   'plaincall/ConnectAjax.getSchedulingJSON.dwr'
+
     data = {
         "callCount": 1,
         "windowName": "",
@@ -103,7 +104,7 @@ def session_details(_session_id):
         "page": "%2Fconnect%2Fsearch.ww",
         "scriptSessionId": "1234567"
     }
-    headers = {'Content-Type': 'text/plain'}
+    headers = {'Content-Type': 'text/plain', 'User-Agent': os.environ['CHROMEDRIVER_USER_AGENT']}
     response = requests.post(details_url, headers=headers, data=data, verify=REQ_VERIFY)
     returned = response.content.decode('utf-8').replace("\\", '')
 
