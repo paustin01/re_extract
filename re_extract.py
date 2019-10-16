@@ -16,40 +16,61 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-SESSION_TYPES = {
-    "2624": "Builders Session",
-    "2623": "Chalk Talk",
-    "2": "Session",
-    "2523": "Workshop",
-    "2723": "20-Minute Presentation"
+# Session types and topics were used for filtering prior to the site adding
+# venue and day information. Leaving in but commented out in case needed later.
+
+# SESSION_TYPES = {
+#     "2624": "Builders Session",
+#     "2623": "Chalk Talk",
+#     "2": "Session",
+#     "2523": "Workshop",
+#     "2723": "20-Minute Presentation"
+# }
+
+# TOPICS = {
+#     "32821": "Alexa",
+#     "32822": "Analytics",
+#     "32851": "Architecture",
+#     "32852": "Artificial Intelligence & Machine Learning",
+#     "32853": "Blockchain",
+#     "32854": "Compute",
+#     "32855": "Containers",
+#     "32856": "Databases",
+#     "32857": "DevOps",
+#     "32859": "End User Computing & Business Apps",
+#     "32860": "Enterprise",
+#     "32861": "IoT",
+#     "32862": "Management Tools & Governance",
+#     "32863": "Marketplace",
+#     "32864": "Media Solutions",
+#     "32865": "Mobile",
+#     "32866": "Networking & Content Delivery",
+#     "32867": "Open Source",
+#     "32868": "Partner",
+#     "32870": "Robotics",
+#     "32871": "Security, Compliance, and Identity",
+#     "32872": "Serverless",
+#     "32873": "Storage",
+#     "32874": "We Power Tech",
+#     "32875": "Windows & .Net"
+# }
+
+VENUES = {
+    "33659": "Aria",
+    "33660": "Bellagio",
+    "728": "Encore",
+    "33661": "MGM Grand",
+    "33662": "Mirage",
+    "33663": "Venetian/Palazzo"
 }
 
-TOPICS = {
-    "32821": "Alexa",
-    "32822": "Analytics",
-    "32851": "Architecture",
-    "32852": "Artificial Intelligence & Machine Learning",
-    "32853": "Blockchain",
-    "32854": "Compute",
-    "32855": "Containers",
-    "32856": "Databases",
-    "32857": "DevOps",
-    "32859": "End User Computing & Business Apps",
-    "32860": "Enterprise",
-    "32861": "IoT",
-    "32862": "Management Tools & Governance",
-    "32863": "Marketplace",
-    "32864": "Media Solutions",
-    "32865": "Mobile",
-    "32866": "Networking & Content Delivery",
-    "32867": "Open Source",
-    "32868": "Partner",
-    "32870": "Robotics",
-    "32871": "Security, Compliance, and Identity",
-    "32872": "Serverless",
-    "32873": "Storage",
-    "32874": "We Power Tech",
-    "32875": "Windows & .Net"
+DAYS = {
+    "330": "Sunday",
+    "170": "Monday",
+    "31": "Tuesday",
+    "130": "Wednesday",
+    "111": "Thursday",
+    "230": "Friday"
 }
 
 # Get environment variables
@@ -149,28 +170,21 @@ OUTPUT_FILE = 'sessions.txt'
 
 # Create a header row for the file. Note the PIPE (|) DELIMITER.
 with open(OUTPUT_FILE, "w") as myfile:
-    myfile.write("Session ID|Title|Type|Topic|Day|Date|Start|End|Venue|Room|Interest|Abstract\n")
+    myfile.write("Session ID|Title|Type|Day|Date|Start|End|Venue|Room|Interest|Abstract\n")
 
 # Login to the reinvent website
 login(DRIVER, USERNAME, PASSWORD)
 
-# Getting content by session type, instead of the entire set, because sometimes the
-# Get More Results link stops working on the full list. Haven't had issues
-# looking at the lists by session.
-for session_type_id, session_type_name in SESSION_TYPES.items():
-    for topic_id, topic_name in TOPICS.items():
-        url = "https://www.portal.reinvent.awsevents.com/connect/search.ww#" \
-               "loadSearch-searchPhrase=" \
-               "&searchType=session" \
-               "&tc=0" \
-               "&sortBy=" \
-               f"abbreviationSort&sessionTypeID={session_type_id}" \
-               f"&p=&i(19577)={topic_id}"
+# Getting content by multiple filters in order to get a smaller subset of results
+# because the site stops paging a 300 items
+for day_id, day_name in DAYS.items():
+    for venue_id, venue_name in VENUES.items():
+        url = f"https://www.portal.reinvent.awsevents.com/connect/search.ww#loadSearch-searchPhrase=&searchType=session&tc=0&sortBy=daytime&dayID={day_id}&p=&i(728)={venue_id}"
         DRIVER.get('chrome://settings/clearBrowserData')
         DRIVER.get(url)
         sleep(3)
 
-        print(f"Getting {session_type_name} sessions for topic: {topic_name}")
+        print(f"*** Getting sessions on {day_name} at {venue_name}")
         more_results = True
 
         # Click through all of the session results pages for a session.
@@ -194,6 +208,7 @@ for session_type_id, session_type_name in SESSION_TYPES.items():
             i.extract()
 
         sessions = soup.find_all("div", class_="sessionRow")
+        print('*** Total sessions:', len(sessions))
 
         # For each session, pull out the relevant fields and write them to the sessions.txt file.
         for session in sessions:
@@ -223,12 +238,11 @@ for session_type_id, session_type_name in SESSION_TYPES.items():
                 str(session_number) + "|" + \
                 str(session_title) + "|" + \
                 str(session_type) + "|" + \
-                topic_name + "|" + \
                 str(details['day']) + "|" + \
                 str(details['date']) + "|" + \
                 str(details['start_time']) + "|" + \
                 str(details['end_time']) + "|" + \
-                str(details['venue']) + "|" + \
+                venue_name + "|" + \
                 str(details['room']) + "|" + \
                 str(session_interest) + "|" + \
                 str(session_abstract)

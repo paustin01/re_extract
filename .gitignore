@@ -5,3 +5,5 @@ interests.txt
 venv
 .env
 .vscode
+client_secret*
+*.bak

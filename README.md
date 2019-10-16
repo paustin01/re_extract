@@ -94,7 +94,7 @@ python interests.py
 
 # Notes on design choices
 - As the original credited developer noted, the reinvent session catalog site is
-  terrible and just stops paging at some point. To be safe I have it doing much
+  terrible and just stops paging at 300 items. To be safe I have it doing much
   smaller chunks at a time (with sleeps to allow for slow loading) by way of
   filtered searches, looping through session types and topics. This was the only
   way I could reliably capture 99% of the catalog contents (some sessions aren't
