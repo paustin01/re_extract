@@ -55,14 +55,14 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 #     "32875": "Windows & .Net"
 # }
 
-VENUES = {
-    "33659": "Aria",
-    "33660": "Bellagio",
-    "728": "Encore",
-    "33661": "MGM Grand",
-    "33662": "Mirage",
-    "33663": "Venetian/Palazzo"
-}
+# VENUES = {
+#     "33659": "Aria",
+#     "33660": "Bellagio",
+#     "728": "Encore",
+#     "33661": "MGM Grand",
+#     "33662": "Mirage",
+#     "33663": "Venetian/Palazzo"
+# }
 
 DAYS = {
     "20241201": "Sunday",
@@ -180,130 +180,118 @@ sleep(8)
 # Getting content by multiple filters in order to get a smaller subset of results
 # because the site stops paging a 300 items
 for day_id, day_name in DAYS.items():
-    #for venue_id, venue_name in VENUES.items():
-    for i in [1]:
-        #url = f"https://www.portal.reinvent.awsevents.com/connect/search.ww#loadSearch-searchPhrase=&searchType=session&tc=0&sortBy=daytime&dayID={day_id}&p=&i(728)={venue_id}"
-        url = f"https://registration.awsevents.com/flow/awsevents/reinvent24/sessioncatalog/page/page?search.day={day_id}"
-        DRIVER.get('chrome://settings/clearBrowserData')
-        DRIVER.get(url)
-        sleep(8)
+    url = f"https://registration.awsevents.com/flow/awsevents/reinvent24/sessioncatalog/page/page?search.day={day_id}"
+    DRIVER.get('chrome://settings/clearBrowserData')
+    DRIVER.get(url)
+    sleep(8)
 
-        #print(f"*** Getting sessions on {day_name} at {venue_name}")
-        print(f"*** Getting sessions on {day_name}")
-        more_results = True
+    print(f"*** Getting sessions on {day_name}")
+    more_results = True
 
-        # Click through all of the session results pages for a session.
-        while more_results:
-            try:
-                DRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                get_results_btn = DRIVER.find_element_by_css_selector("[data-test='rf-button-learn-more']")#.find_element_by_class_name("show-more-btn")
-                print("*** Clicking Show more")
-                get_results_btn.click()
-                sleep(3)
-            except NoSuchElementException as e_error:
-                more_results = False
+    # Click through all of the session results pages for a session.
+    while more_results:
+        try:
+            DRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            get_results_btn = DRIVER.find_element_by_css_selector("[data-test='rf-button-learn-more']")#.find_element_by_class_name("show-more-btn")
+            print("*** Clicking Show more")
+            get_results_btn.click()
+            sleep(3)
+        except NoSuchElementException as e_error:
+            more_results = False
 
-        # Once all sessions have been loaded append to a variable for use in BS
-        CONTENT_TO_PARSE = DRIVER.page_source
+    # Once all sessions have been loaded append to a variable for use in BS
+    CONTENT_TO_PARSE = DRIVER.page_source
 
-        # Extract high level session info. Note that in some rows there are audio
-        # options inside an 'i' tag so we strip them out to make this easier on BS
-        soup = BeautifulSoup(CONTENT_TO_PARSE, "html.parser")
+    # Extract high level session info. Note that in some rows there are audio
+    # options inside an 'i' tag so we strip them out to make this easier on BS
+    soup = BeautifulSoup(CONTENT_TO_PARSE, "html.parser")
 
-        for i in soup.find_all('i'):
-            i.extract()
+    for i in soup.find_all('i'):
+        i.extract()
 
-        sessions = soup.find_all("li", {"class": "session-result"})
-        print('*** Total sessions:', len(sessions))
+    sessions = soup.find_all("li", {"class": "session-result"})
+    print('*** Total sessions:', len(sessions))
 
-        # For each session, pull out the relevant fields and write them to the sessions.txt file.
-        for session in sessions:
-            # session_id = session_soup.find("div", class_="sessionRow")
-            # session_id = session_id['id']
-            # session_id = session_id[session_id.find("_")+1:]
-            # session_number = session_soup.find("span", class_="abbreviation")
-            # session_number = session_number.string.replace(" - ", "")
-            # session_title = session_soup.find("span", class_="title")
-            # session_title = session_title.string.encode('utf-8').rstrip()
-            # session_title = session_title.decode('utf-8').strip()
-            # session_abstract = \
-            #    session_soup.find("span", class_="abstract").text.replace(' View More', '')
+    # For each session, pull out the relevant fields and write them to the sessions.txt file.
+    for session in sessions:
+        session_soup = BeautifulSoup(str(session), "html.parser")
 
-            session_soup = BeautifulSoup(str(session), "html.parser")
+        session_id = session_soup.get("data-session-id")
+        parts = session_soup.find("div", class_="title-text").text.rstrip().split(" | ")
+        session_number = parts[0] if len(parts) > 0 else "TBD"
+        session_title = parts[1] if len(parts) > 1 else "TBD"
+        session_abstract = session_soup.find("div", class_="description").text
+        session_type = session_soup.find("div", class_="rf-session-types").text
 
-            session_id = session_soup.get("data-session-id")
-            session_number = session_soup.find("div", class_="description").get("id")
-            session_abstract = session_soup.find("div", class_="description").text
-            session_title = session_soup.find("div", class_="title-text").text.rstrip()
-            session_type = session_soup.find("div", class_="attribute-Sessiontypes")
-            if session_type is not None:
-                session_type = session_type.find("span", class_="attribute-values").text
-            else:
-                session_type = ""
-            session_interest = session_soup.find("svg",
-                                                     attrs={"data-title": "Heart Icon"})
+        # The filled/not filled Heart Icon depicts whether you have favorited the course
+        session_interest = session_soup.find("svg",
+                                                 attrs={"data-title": "Heart Icon"})
 
-            session_not_interest = session_soup.find("svg",
-                                                     attrs={"data-title": "Heart Open Icon"})
+        session_not_interest = session_soup.find("svg",
+                                                 attrs={"data-title": "Heart Open Icon"})
 
-            # TODO: Update session_details function, until then parse main page
-            #  details = session_details(session_id)
-            details = {
-                "day": "TBD",
-                "date": "TBD",
-                "start_time": "TBD",
-                "end_time": "TBD",
-                "venue": "TBD",
-                "room": "TBD"
-            }
-            session_day = session_soup.find("span", class_="session-date")
-            if session_day is not None:
-                session_day = session_day.text
-                parts = session_day.split(", ")
-                if len(parts) > 0:
-                    details['day'] = parts[0]
-                if len(parts) > 1:
-                    details['date'] = parts[1]
+        # TODO: Update session_details function, until then parse main page
+        #  details = session_details(session_id)
+        details = {
+            "day": "TBD",
+            "date": "TBD",
+            "start_time": "TBD",
+            "end_time": "TBD",
+            "venue": "TBD",
+            "room": "TBD"
+        }
 
-            session_time = session_soup.find("span", class_="session-time")
-            if session_time is not None:
-                session_time = session_time.text
-                parts = session_time.split(" - ")
-                if len(parts) > 0:
-                    details['start_time'] = parts[0]
-                if len(parts) > 1:
-                    details['end_time'] = parts[1]
+        # Example Day: Monday, December 2
+        session_day = session_soup.find("span", class_="session-date")
+        if session_day is not None:
+            session_day = session_day.text
+            parts = session_day.split(", ")
+            if len(parts) > 0:
+                details['day'] = parts[0]
+            if len(parts) > 1:
+                details['date'] = parts[1]
 
-            session_location = session_soup.find("span", class_="session-location")
-            if session_location is not None:
-                session_location = session_location.text
-                parts = session_location.split(" | ")
-                if len(parts) > 0:
-                    details['venue'] = parts[0]
-                if len(parts) > 1:
-                    details['room'] = " - ".join(parts[1:])
+        # Example Time: 8:00 AM - 10:00 AM PST
+        session_time = session_soup.find("span", class_="session-time")
+        if session_time is not None:
+            session_time = session_time.text
+            parts = session_time.split(" - ")
+            if len(parts) > 0:
+                details['start_time'] = parts[0]
+            if len(parts) > 1:
+                details['end_time'] = " ".join(parts[1].split(" ")[0:2])  # remove PST
 
-            print("Writing", session_number)
+        # Example Location: MGM | Level 1 | Grand 123
+        session_location = session_soup.find("span", class_="session-location")
+        if session_location is not None:
+            session_location = session_location.text
+            parts = session_location.split(" | ")
+            if len(parts) > 0:
+                details['venue'] = parts[0]
+            if len(parts) > 1:
+                details['room'] = " - ".join(parts[1:])
 
-            if session_interest is None:
-                session_interest = False
-            else:
-                session_interest = True
+        print("Writing", session_number)
 
-            write_contents = \
-                str(session_number) + "|" + \
-                str(session_title) + "|" + \
-                str(session_type) + "|" + \
-                str(details['day']) + "|" + \
-                str(details['date']) + "|" + \
-                str(details['start_time']) + "|" + \
-                str(details['end_time']) + "|" + \
-                str(details['venue']) + "|" + \
-                str(details['room']) + "|" + \
-                str(session_interest) + "|" + \
-                str(session_abstract)
+        if session_interest is None:
+            session_interest = False
+        else:
+            session_interest = True
 
-            with open(OUTPUT_FILE, "a") as myfile:
-                myfile.write(str(write_contents.strip()) + "\n")
+        write_contents = \
+            str(session_number) + "|" + \
+            str(session_title) + "|" + \
+            str(session_type) + "|" + \
+            str(details['day']) + "|" + \
+            str(details['date']) + "|" + \
+            str(details['start_time']) + "|" + \
+            str(details['end_time']) + "|" + \
+            str(details['venue']) + "|" + \
+            str(details['room']) + "|" + \
+            str(session_interest) + "|" + \
+            str(session_abstract)
+
+        with open(OUTPUT_FILE, "a") as myfile:
+            myfile.write(str(write_contents.strip()) + "\n")
 
 DRIVER.close()
