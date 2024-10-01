@@ -173,21 +173,20 @@ with open(OUTPUT_FILE, "w") as myfile:
     myfile.write("Session ID|Title|Type|Day|Date|Start|End|Venue|Room|Interest|Abstract\n")
 
 # Login to the reinvent website
-print("*** Loging in")
+print("*** Logging in")
 login(DRIVER, USERNAME, PASSWORD)
-sleep(5)
+sleep(8)
 
 # Getting content by multiple filters in order to get a smaller subset of results
 # because the site stops paging a 300 items
 for day_id, day_name in DAYS.items():
-    venue_name = "TBD"
     #for venue_id, venue_name in VENUES.items():
     for i in [1]:
         #url = f"https://www.portal.reinvent.awsevents.com/connect/search.ww#loadSearch-searchPhrase=&searchType=session&tc=0&sortBy=daytime&dayID={day_id}&p=&i(728)={venue_id}"
         url = f"https://registration.awsevents.com/flow/awsevents/reinvent24/sessioncatalog/page/page?search.day={day_id}"
         DRIVER.get('chrome://settings/clearBrowserData')
         DRIVER.get(url)
-        sleep(5)
+        sleep(8)
 
         #print(f"*** Getting sessions on {day_name} at {venue_name}")
         print(f"*** Getting sessions on {day_name}")
@@ -241,13 +240,15 @@ for day_id, day_name in DAYS.items():
                 session_type = session_type.find("span", class_="attribute-values").text
             else:
                 session_type = ""
-            session_interest = session_soup.find("div", class_="attribute-Areaofinterest")
-            if session_interest is not None:
-                session_interest = session_interest.find("span", class_="attribute-values").text
-            else:
-                session_interest = ""
-            # TODO: details = session_details(session_id)
-            details = time_information = {
+            session_interest = session_soup.find("svg",
+                                                     attrs={"data-title": "Heart Icon"})
+
+            session_not_interest = session_soup.find("svg",
+                                                     attrs={"data-title": "Heart Open Icon"})
+
+            # TODO: Update session_details function, until then parse main page
+            #  details = session_details(session_id)
+            details = {
                 "day": "TBD",
                 "date": "TBD",
                 "start_time": "TBD",
@@ -255,6 +256,32 @@ for day_id, day_name in DAYS.items():
                 "venue": "TBD",
                 "room": "TBD"
             }
+            session_day = session_soup.find("span", class_="session-date")
+            if session_day is not None:
+                session_day = session_day.text
+                parts = session_day.split(", ")
+                if len(parts) > 0:
+                    details['day'] = parts[0]
+                if len(parts) > 1:
+                    details['date'] = parts[1]
+
+            session_time = session_soup.find("span", class_="session-time")
+            if session_time is not None:
+                session_time = session_time.text
+                parts = session_time.split(" - ")
+                if len(parts) > 0:
+                    details['start_time'] = parts[0]
+                if len(parts) > 1:
+                    details['end_time'] = parts[1]
+
+            session_location = session_soup.find("span", class_="session-location")
+            if session_location is not None:
+                session_location = session_location.text
+                parts = session_location.split(" | ")
+                if len(parts) > 0:
+                    details['venue'] = parts[0]
+                if len(parts) > 1:
+                    details['room'] = " - ".join(parts[1:])
 
             print("Writing", session_number)
 
@@ -271,7 +298,7 @@ for day_id, day_name in DAYS.items():
                 str(details['date']) + "|" + \
                 str(details['start_time']) + "|" + \
                 str(details['end_time']) + "|" + \
-                venue_name + "|" + \
+                str(details['venue']) + "|" + \
                 str(details['room']) + "|" + \
                 str(session_interest) + "|" + \
                 str(session_abstract)
