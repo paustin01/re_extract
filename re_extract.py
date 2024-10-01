@@ -55,14 +55,13 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 #     "32875": "Windows & .Net"
 # }
 
-# VENUES = {
-#     "33659": "Aria",
-#     "33660": "Bellagio",
-#     "728": "Encore",
-#     "33661": "MGM Grand",
-#     "33662": "Mirage",
-#     "33663": "Venetian/Palazzo"
-# }
+VENUES = {
+    "1714149514282003u0NO": "Mandalay Bay",
+    "1714149514282001ui9z": "Caesars Forum",
+    "1714149514282004uw2u": "MGM",
+    "1714149514282006uDYu": "Venetian",
+    "1714149514282007uKju": "Wynn"
+}
 
 DAYS = {
     "20241201": "Sunday",
@@ -170,7 +169,7 @@ OUTPUT_FILE = 'sessions.txt'
 
 # Create a header row for the file. Note the PIPE (|) DELIMITER.
 with open(OUTPUT_FILE, "w") as myfile:
-    myfile.write("Session ID|Title|Topic|Type|Day|Date|Start|End|Venue|Room|Interest|Abstract\n")
+    myfile.write("Session ID|Title|Interest|Priority|Topic|Type|Day|Date|Start|End|Venue|Room|Abstract\n")
 
 # Login to the reinvent website
 print("*** Logging in")
@@ -179,12 +178,16 @@ sleep(8)
 
 # Getting content by multiple filters in order to get a smaller subset of results
 # because the site stops paging a 300 items
+total_sessions = 0
 for day_id, day_name in DAYS.items():
+    # for venue_id, venue_name in VENUES.items():
+    # url = f"https://registration.awsevents.com/flow/awsevents/reinvent24/sessioncatalog/page/page?search.day={day_id}&search.venue={venue_id}"
     url = f"https://registration.awsevents.com/flow/awsevents/reinvent24/sessioncatalog/page/page?search.day={day_id}"
     DRIVER.get('chrome://settings/clearBrowserData')
     DRIVER.get(url)
     sleep(8)
 
+    # print(f"*** Getting sessions on {day_name} for {venue_name}")
     print(f"*** Getting sessions on {day_name}")
     more_results = True
 
@@ -210,7 +213,8 @@ for day_id, day_name in DAYS.items():
         i.extract()
 
     sessions = soup.find_all("li", {"class": "session-result"})
-    print('*** Total sessions:', len(sessions))
+    print('*** Found Sessions:', len(sessions))
+    total_sessions += len(sessions)
 
     # For each session, pull out the relevant fields and write them to the sessions.txt file.
     for session in sessions:
@@ -288,16 +292,19 @@ for day_id, day_name in DAYS.items():
                 if len(parts) > 1:
                     details['room'] = " - ".join(parts[1:])
 
-        print("Writing", session_number)
-
+        # print("Writing", session_number)
         if session_interest is None:
             session_interest = False
+            session_interest_priority = ""
         else:
             session_interest = True
+            session_interest_priority = "1"
 
         write_contents = \
             str(session_number) + "|" + \
             str(session_title) + "|" + \
+            str(session_interest) + "|" + \
+            str(session_interest_priority) + "|" + \
             str(session_topics) + "|" + \
             str(session_type) + "|" + \
             str(details['day']) + "|" + \
@@ -306,10 +313,10 @@ for day_id, day_name in DAYS.items():
             str(details['end_time']) + "|" + \
             str(details['venue']) + "|" + \
             str(details['room']) + "|" + \
-            str(session_interest) + "|" + \
             str(session_abstract)
 
         with open(OUTPUT_FILE, "a") as myfile:
             myfile.write(str(write_contents.strip()) + "\n")
 
+print('*** TOTAL Sessions:', total_sessions)
 DRIVER.close()
