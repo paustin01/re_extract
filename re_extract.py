@@ -265,11 +265,24 @@ for day_id, day_name in DAYS.items():
         session_location = session_soup.find("span", class_="session-location")
         if session_location is not None:
             session_location = session_location.text
-            parts = session_location.split(" | ")
-            if len(parts) > 0:
-                details['venue'] = parts[0]
-            if len(parts) > 1:
-                details['room'] = " - ".join(parts[1:])
+
+            # Sessions like Dev chats have a trailing "|" we just need to truncate
+            if session_location[-1] == "|":
+                session_location = session_location[:-1]
+
+            # Sessions like re:Play don't have a venue, just starts with "| "
+            if session_location[:1] == "|":
+                details['venue'] = "Unknown"
+                session_location = session_location[2:]
+                parts = session_location.split(" | ")
+                if len(parts) > 0:
+                    details['room'] = " - ".join(parts)
+            else:
+                parts = session_location.split(" | ")
+                if len(parts) > 0:
+                    details['venue'] = parts[0]
+                if len(parts) > 1:
+                    details['room'] = " - ".join(parts[1:])
 
         print("Writing", session_number)
 
