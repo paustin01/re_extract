@@ -170,7 +170,7 @@ OUTPUT_FILE = 'sessions.txt'
 
 # Create a header row for the file. Note the PIPE (|) DELIMITER.
 with open(OUTPUT_FILE, "w") as myfile:
-    myfile.write("Session ID|Title|Type|Day|Date|Start|End|Venue|Room|Interest|Abstract\n")
+    myfile.write("Session ID|Title|Topic|Type|Day|Date|Start|End|Venue|Room|Interest|Abstract\n")
 
 # Login to the reinvent website
 print("*** Logging in")
@@ -222,6 +222,10 @@ for day_id, day_name in DAYS.items():
         session_title = parts[1] if len(parts) > 1 else "TBD"
         session_abstract = session_soup.find("div", class_="description").text
         session_type = session_soup.find("div", class_="rf-session-types").text
+
+        session_topics = session_soup.find_all("div", class_="badge-attribute-topic")
+        session_topics = [item.text for item in session_topics]
+        session_topics = ", ".join(session_topics)
 
         # The filled/not filled Heart Icon depicts whether you have favorited the course
         session_interest = session_soup.find("svg",
@@ -294,6 +298,7 @@ for day_id, day_name in DAYS.items():
         write_contents = \
             str(session_number) + "|" + \
             str(session_title) + "|" + \
+            str(session_topics) + "|" + \
             str(session_type) + "|" + \
             str(details['day']) + "|" + \
             str(details['date']) + "|" + \
