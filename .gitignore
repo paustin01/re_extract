@@ -7,3 +7,4 @@ venv
 .vscode
 client_secret*
 *.bak
+.idea*
