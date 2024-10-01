@@ -23,6 +23,7 @@ others can discover and help maintain it.
    browser version into the root of this project directory (Don't worry, it's
    `.gitignore`'d)
    - https://sites.google.com/a/chromium.org/chromedriver/downloads
+   - NOTE for Chrome version higher than 115, go here https://googlechromelabs.github.io/chrome-for-testing/
 4. Duplicate the `example.env` file as simply `.env` and update configuration as
    appropriate (see configuration section below)
 5. Run the script
@@ -37,6 +38,12 @@ compatibility issues.
 # Clone this repo and change into the directory
 git clone <this repo>
 cd re_extract
+
+# Download and copy chromedriver-mac-arm64 folder to root of repo
+#   Go here https://googlechromelabs.github.io/chrome-for-testing/
+#   Next, you need to override macOS malware alert in order to run it
+xattr -d com.apple.quarantine ./chromedriver-mac-arm64/chromedriver
+
 
 # The .env file from the example and update per the config section below
 cp example.env .env

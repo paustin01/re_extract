@@ -65,12 +65,12 @@ VENUES = {
 }
 
 DAYS = {
-    "330": "Sunday",
-    "170": "Monday",
-    "31": "Tuesday",
-    "130": "Wednesday",
-    "111": "Thursday",
-    "230": "Friday"
+    "20241201": "Sunday",
+    "20241202": "Monday",
+    "20241203": "Tuesday",
+    "20241204": "Wednesday",
+    "20241205": "Thursday",
+    "20241206": "Friday"
 }
 
 # Get environment variables
@@ -86,22 +86,22 @@ CHROME_OPTIONS.add_argument("--headless")
 CHROME_OPTIONS.add_argument(f"user-agent={os.environ['CHROMEDRIVER_USER_AGENT']}")
 CONTENT_TO_PARSE = ''
 
-DRIVER = webdriver.Chrome(chrome_options=CHROME_OPTIONS, executable_path=CHROME_DRIVER)
+DRIVER = webdriver.Chrome(options=CHROME_OPTIONS, executable_path=CHROME_DRIVER)
 
 def login(chrome_driver, username, password):
     '''
     Handle user login to the reinvent session catalog.
     Utilizes headless chrome, passing in username and password
     '''
-    chrome_driver.get("https://www.portal.reinvent.awsevents.com/connect/login.ww")
-    cookie_button = chrome_driver.find_element_by_id("cookieAgreementAcceptButton")
-    DRIVER.implicitly_wait(5)
-    cookie_button.click()
-    username_field = chrome_driver.find_element_by_id("loginUsername")
+    chrome_driver.get("https://registration.awsevents.com/flow/awsevents/reinvent24/reg/login")
+    #cookie_button = chrome_driver.find_element_by_id("cookieAgreementAcceptButton")
+    #DRIVER.implicitly_wait(5)
+    #cookie_button.click()
+    username_field = chrome_driver.find_element_by_css_selector("[data-test='rf-text-input-node-login-email']")
     username_field.send_keys(username)
-    password_field = chrome_driver.find_element_by_id("loginPassword")
+    password_field = chrome_driver.find_element_by_css_selector("[data-test='rf-text-input-node-password']")
     password_field.send_keys(password)
-    login_button = chrome_driver.find_element_by_id("loginButton")
+    login_button = chrome_driver.find_element_by_css_selector("[data-test='rf-button-button-login']")
     login_button.click()
 
 def session_details(_session_id):
@@ -173,25 +173,32 @@ with open(OUTPUT_FILE, "w") as myfile:
     myfile.write("Session ID|Title|Type|Day|Date|Start|End|Venue|Room|Interest|Abstract\n")
 
 # Login to the reinvent website
+print("*** Loging in")
 login(DRIVER, USERNAME, PASSWORD)
+sleep(5)
 
 # Getting content by multiple filters in order to get a smaller subset of results
 # because the site stops paging a 300 items
 for day_id, day_name in DAYS.items():
-    for venue_id, venue_name in VENUES.items():
-        url = f"https://www.portal.reinvent.awsevents.com/connect/search.ww#loadSearch-searchPhrase=&searchType=session&tc=0&sortBy=daytime&dayID={day_id}&p=&i(728)={venue_id}"
+    venue_name = "TBD"
+    #for venue_id, venue_name in VENUES.items():
+    for i in [1]:
+        #url = f"https://www.portal.reinvent.awsevents.com/connect/search.ww#loadSearch-searchPhrase=&searchType=session&tc=0&sortBy=daytime&dayID={day_id}&p=&i(728)={venue_id}"
+        url = f"https://registration.awsevents.com/flow/awsevents/reinvent24/sessioncatalog/page/page?search.day={day_id}"
         DRIVER.get('chrome://settings/clearBrowserData')
         DRIVER.get(url)
-        sleep(3)
+        sleep(5)
 
-        print(f"*** Getting sessions on {day_name} at {venue_name}")
+        #print(f"*** Getting sessions on {day_name} at {venue_name}")
+        print(f"*** Getting sessions on {day_name}")
         more_results = True
 
         # Click through all of the session results pages for a session.
         while more_results:
             try:
                 DRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                get_results_btn = DRIVER.find_element_by_link_text("Get More Results")
+                get_results_btn = DRIVER.find_element_by_css_selector("[data-test='rf-button-learn-more']")#.find_element_by_class_name("show-more-btn")
+                print("*** Clicking Show more")
                 get_results_btn.click()
                 sleep(3)
             except NoSuchElementException as e_error:
@@ -207,25 +214,47 @@ for day_id, day_name in DAYS.items():
         for i in soup.find_all('i'):
             i.extract()
 
-        sessions = soup.find_all("div", class_="sessionRow")
+        sessions = soup.find_all("li", {"class": "session-result"})
         print('*** Total sessions:', len(sessions))
 
         # For each session, pull out the relevant fields and write them to the sessions.txt file.
         for session in sessions:
+            # session_id = session_soup.find("div", class_="sessionRow")
+            # session_id = session_id['id']
+            # session_id = session_id[session_id.find("_")+1:]
+            # session_number = session_soup.find("span", class_="abbreviation")
+            # session_number = session_number.string.replace(" - ", "")
+            # session_title = session_soup.find("span", class_="title")
+            # session_title = session_title.string.encode('utf-8').rstrip()
+            # session_title = session_title.decode('utf-8').strip()
+            # session_abstract = \
+            #    session_soup.find("span", class_="abstract").text.replace(' View More', '')
+
             session_soup = BeautifulSoup(str(session), "html.parser")
-            session_id = session_soup.find("div", class_="sessionRow")
-            session_id = session_id['id']
-            session_id = session_id[session_id.find("_")+1:]
-            session_number = session_soup.find("span", class_="abbreviation")
-            session_number = session_number.string.replace(" - ", "")
-            session_title = session_soup.find("span", class_="title")
-            session_title = session_title.string.encode('utf-8').rstrip()
-            session_title = session_title.decode('utf-8').strip()
-            session_type = session_soup.find("small", class_="type").text
-            session_interest = session_soup.find("a", class_="interested")
-            session_abstract = \
-                session_soup.find("span", class_="abstract").text.replace(' View More', '')
-            details = session_details(session_id)
+
+            session_id = session_soup.get("data-session-id")
+            session_number = session_soup.find("div", class_="description").get("id")
+            session_abstract = session_soup.find("div", class_="description").text
+            session_title = session_soup.find("div", class_="title-text").text.rstrip()
+            session_type = session_soup.find("div", class_="attribute-Sessiontypes")
+            if session_type is not None:
+                session_type = session_type.find("span", class_="attribute-values").text
+            else:
+                session_type = ""
+            session_interest = session_soup.find("div", class_="attribute-Areaofinterest")
+            if session_interest is not None:
+                session_interest = session_interest.find("span", class_="attribute-values").text
+            else:
+                session_interest = ""
+            # TODO: details = session_details(session_id)
+            details = time_information = {
+                "day": "TBD",
+                "date": "TBD",
+                "start_time": "TBD",
+                "end_time": "TBD",
+                "venue": "TBD",
+                "room": "TBD"
+            }
 
             print("Writing", session_number)
 
