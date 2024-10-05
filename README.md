@@ -89,7 +89,14 @@ agent string and insert that into the .env file.
 # Marking interests
 The `interests.py` takes an input file called `interests.txt` which is simply a
 line-separated list of session ID's you're interested in and marks them as true
-in the Interest column in the sessions.txt file.
+in the Interest column in the sessions.txt file. Optionally, you can add a priority 
+for each session in the interests.txt file. On each line of the file, put: session ID,priority.
+For example, if I want session DEV303 to have priority 1 and DEV101 to have priority 2,
+I would write:
+```text
+DEV303,1
+DEV101,2
+```
 
 ## Usage
 Once you've run your extract and the `sessions.txt` file exists, and created the
