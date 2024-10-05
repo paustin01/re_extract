@@ -164,6 +164,19 @@ def session_details(_session_id):
 
     return time_information
 
+# Parse interests.txt file to get list we can check against while we navigate site
+interests_file = 'interests.txt'
+interests_list = {}
+for line in open(interests_file):
+    parts = line.rstrip('\n').split(",")
+    if len(parts) > 1:
+        line = parts[0]
+        priority = parts[1]
+    else:
+        line = parts[0]
+        priority = "1"
+    interests_list[("".join(line.upper().rstrip('\n').split('-')))] = priority
+
 # Open a blank text file to write sessions to
 OUTPUT_FILE = 'sessions.txt'
 
@@ -195,12 +208,38 @@ for day_id, day_name in DAYS.items():
     while more_results:
         try:
             DRIVER.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            get_results_btn = DRIVER.find_element_by_css_selector("[data-test='rf-button-learn-more']")#.find_element_by_class_name("show-more-btn")
+            get_results_btn = DRIVER.find_element_by_css_selector("[data-test='rf-button-learn-more']")
             print("*** Clicking Show more")
             get_results_btn.click()
             sleep(3)
         except NoSuchElementException as e_error:
             more_results = False
+
+    # Click on all Interest buttons found in interests.txt
+    try:
+        interest_buttons_on_page = DRIVER.find_elements_by_css_selector("[data-test='rf-icon-interest']")
+        for item in interest_buttons_on_page:
+            item_session_id = re.search('^Click to favorite (.+?) \||^Click to un-favorite (.+?) \|', item.get_attribute('aria-label'))
+            if item_session_id:
+                if item_session_id.group(1) is None:
+                    item_session_id = item_session_id.group(2)
+                else:
+                    item_session_id = item_session_id.group(1)
+
+                serssion_id = "".join(item_session_id.upper().rstrip('\n').split('-'))
+                if serssion_id in interests_list:
+                    # Click if the button is not marked as interested yet
+                    is_pressed = item.get_attribute('aria-pressed')
+                    if is_pressed == "true":
+                        print(f"Found a match in interests.txt for session {item_session_id}, already favorited...")
+                    else:
+                        print(f"Found a match in interests.txt for session {item_session_id}, clicking to favorite...")
+                        DRIVER.execute_script("arguments[0].click();", item)
+
+
+
+    except NoSuchElementException as e_error:
+        print("*** Didn't find any interest buttons")
 
     # Once all sessions have been loaded append to a variable for use in BS
     CONTENT_TO_PARSE = DRIVER.page_source
