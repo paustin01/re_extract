@@ -93,9 +93,14 @@ def login(chrome_driver, username, password):
     Utilizes headless chrome, passing in username and password
     '''
     chrome_driver.get("https://registration.awsevents.com/flow/awsevents/reinvent24/reg/login")
-    #cookie_button = chrome_driver.find_element_by_id("cookieAgreementAcceptButton")
-    #DRIVER.implicitly_wait(5)
-    #cookie_button.click()
+    try:
+        print("*** Attempting to Accept Cookie Policy")
+        cookie_button = chrome_driver.find_element_by_css_selector("[data-id='awsccc-cb-btn-accept']")
+        DRIVER.implicitly_wait(5)
+        cookie_button.click()
+    except:
+        print("*** Assuming Cookie Policy already accepted")
+
     username_field = chrome_driver.find_element_by_css_selector("[data-test='rf-text-input-node-login-email']")
     username_field.send_keys(username)
     password_field = chrome_driver.find_element_by_css_selector("[data-test='rf-text-input-node-password']")
@@ -167,15 +172,18 @@ def session_details(_session_id):
 # Parse interests.txt file to get list we can check against while we navigate site
 interests_file = 'interests.txt'
 interests_list = {}
-for line in open(interests_file):
-    parts = line.rstrip('\n').split(",")
-    if len(parts) > 1:
-        line = parts[0]
-        priority = parts[1]
-    else:
-        line = parts[0]
-        priority = "1"
-    interests_list[("".join(line.upper().rstrip('\n').split('-')))] = priority
+try:
+    for line in open(interests_file):
+        parts = line.rstrip('\n').split(",")
+        if len(parts) > 1:
+            line = parts[0]
+            priority = parts[1]
+        else:
+            line = parts[0]
+            priority = "1"
+        interests_list[("".join(line.upper().rstrip('\n').split('-')))] = priority
+except:
+    print("If you would like to have this script favorite your sessions, please create an interests.txt file.")
 
 # Open a blank text file to write sessions to
 OUTPUT_FILE = 'sessions.txt'
